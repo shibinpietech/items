@@ -21,22 +21,25 @@ class _SelectedProductsScreenState extends State<SelectedProductsScreen> {
         title: const Text('Selected Products'),
       ),
       body: widget.selectedProducts.isNotEmpty
-          ? Container(
-              margin: const EdgeInsets.symmetric(vertical: 20),
-              child: ReorderableGridView.count(
-                shrinkWrap: true,
-                crossAxisCount: 2,
-                mainAxisSpacing: 8.0,
-                crossAxisSpacing: 8.0,
-                children: widget.selectedProducts
-                    .map((e) => buildProductItem(e))
-                    .toList(),
-                onReorder: (oldIndex, newIndex) {
-                  setState(() {
-                    final element = widget.selectedProducts.removeAt(oldIndex);
-                    widget.selectedProducts.insert(newIndex, element);
-                  });
-                },
+          ? SingleChildScrollView(
+              child: Container(
+                width: MediaQuery.of(context).size.width,
+                height: MediaQuery.of(context).size.height,
+                margin: const EdgeInsets.symmetric(vertical: 20),
+                child: ReorderableGridView.count(
+                  restrictDragScope: true,
+                  physics: const ClampingScrollPhysics(),
+                  shrinkWrap: true,
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 8.0,
+                  crossAxisSpacing: 8.0,
+                  children: widget.selectedProducts
+                      .map((e) => buildProductItem(e))
+                      .toList(),
+                  onReorder: (oldIndex, newIndex) {
+                    _reorderProducts(oldIndex, newIndex);
+                  },
+                ),
               ),
             )
           : const Center(
@@ -46,24 +49,22 @@ class _SelectedProductsScreenState extends State<SelectedProductsScreen> {
   }
 
   Widget buildProductItem(Product product) {
-    return Card(
+    return Column(
       key: ValueKey(product),
-      child: Column(
-        children: [
-          SizedBox(height: 130, child: buildZoomableImage(product.thumbnail)),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.title,
-                ),
-              ],
-            ),
+      children: [
+        SizedBox(height: 130, child: buildZoomableImage(product.thumbnail)),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                product.title,
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -100,5 +101,22 @@ class _SelectedProductsScreenState extends State<SelectedProductsScreen> {
         ),
       ),
     );
+  }
+
+  void _reorderProducts(int oldIndex, int newIndex) {
+    setState(() {
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+
+      // Calculate new index while ensuring it stays within bounds
+      newIndex = newIndex.clamp(0, widget.selectedProducts.length - 1);
+
+      // Get the key of the dragged item
+      final Product draggedProduct = widget.selectedProducts.removeAt(oldIndex);
+
+      // Insert the dragged item at the new index
+      widget.selectedProducts.insert(newIndex, draggedProduct);
+    });
   }
 }
